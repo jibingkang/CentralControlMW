@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas import ButtonCallbackRequest, APIResponse
+from app.schemas import ButtonCallbackRequest, APIResponse, PYDANTIC_V2
 from app import crud
 from app.tcp_client import send_tcp_message
 import logging
@@ -25,12 +25,18 @@ async def handle_button_callback(
         mapping = crud.get_device_mapping_by_device_id(db, callback_data.mac)
         if not mapping:
             logger.warning(f"设备未找到: {callback_data.mac}")
+            # 根据Pydantic版本使用不同的方法
+            if PYDANTIC_V2:
+                request_data = callback_data.model_dump()
+            else:
+                request_data = callback_data.dict()
+            
             crud.create_operation_log(
                 db=db,
                 log_type="callback",
                 device_id=callback_data.mac,
                 convert_code="",
-                request_data=callback_data.model_dump(),
+                request_data=request_data,
                 response_data={"error": "device not found"},
                 status="failed",
                 error_message="Device not found",
@@ -58,13 +64,19 @@ async def handle_button_callback(
         )
         logger.info(f"TCP消息发送结果: {tcp_result}")
 
+        # 根据Pydantic版本使用不同的方法
+        if PYDANTIC_V2:
+            request_data = callback_data.model_dump()
+        else:
+            request_data = callback_data.dict()
+        
         # 创建操作日志
         crud.create_operation_log(
             db=db,
             log_type="callback",
             device_id=callback_data.mac,
             convert_code=mapping.convert_code,
-            request_data=callback_data.model_dump(),
+            request_data=request_data,
             response_data={
                 "tcp_result": tcp_result,
                 "tcp_server": f"{tcp_host}:{tcp_port}",

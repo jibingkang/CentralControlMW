@@ -4,7 +4,7 @@ from typing import Optional, List
 from datetime import date
 from pydantic import BaseModel
 from app.database import get_db
-from app.schemas import OperationLogResponse, APIResponse
+from app.schemas import OperationLogResponse, APIResponse, PYDANTIC_V2
 from app import crud
 
 router = APIRouter()
@@ -38,11 +38,17 @@ async def get_operation_logs(
             limit=page_size
         )
 
+        # 根据Pydantic版本使用不同的方法
+        if PYDANTIC_V2:
+            items = [OperationLogResponse.model_validate(log).model_dump() for log in logs]
+        else:
+            items = [OperationLogResponse.from_orm(log).dict() for log in logs]
+        
         return APIResponse(
             code=200,
             message="success",
             data={
-                "items": [OperationLogResponse.model_validate(log).model_dump() for log in logs],
+                "items": items,
                 "total": total,
                 "page": page,
                 "page_size": page_size
@@ -76,10 +82,16 @@ async def get_operation_log(
                 data=None
             )
 
+        # 根据Pydantic版本使用不同的方法
+        if PYDANTIC_V2:
+            log_data = OperationLogResponse.model_validate(log).model_dump()
+        else:
+            log_data = OperationLogResponse.from_orm(log).dict()
+        
         return APIResponse(
             code=200,
             message="success",
-            data=OperationLogResponse.model_validate(log).model_dump()
+            data=log_data
         )
     except Exception as e:
         return APIResponse(

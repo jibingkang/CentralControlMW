@@ -42,17 +42,29 @@ async def update_tcp_config(
     db: Session = Depends(get_db)
 ):
     client_ip = request.client.host if request.client else ""
+    logger.info(f"开始更新TCP配置: {client_ip}")
 
     try:
         old_config = crud.get_tcp_config(db)
+        logger.info(f"旧配置: {old_config}")
+        
+        # 根据Pydantic版本使用不同的方法
+        if PYDANTIC_V2:
+            config_dict = config_data.model_dump(exclude_none=True)
+        else:
+            config_dict = config_data.dict(exclude_none=True)
+        logger.info(f"新配置: {config_dict}")
+        
         new_config = crud.update_tcp_config(db, config_data)
+        logger.info(f"更新后配置: {new_config}")
 
+        # 记录操作日志
         crud.create_operation_log(
             db=db,
             log_type="config",
             device_id="",
             convert_code="",
-            request_data={"old": old_config, "new": config_data.model_dump(exclude_none=True)},
+            request_data={"old": old_config, "new": config_dict},
             response_data=new_config,
             status="success",
             client_ip=client_ip
@@ -64,9 +76,12 @@ async def update_tcp_config(
             data=new_config
         )
     except Exception as e:
+        logger.error(f"更新TCP配置失败: {str(e)}")
+        import traceback
+        logger.error(f"错误详情: {traceback.format_exc()}")
         return APIResponse(
             code=500,
-            message="Database error",
+            message=f"Database error: {str(e)}",
             data=None
         )
 
