@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from functools import lru_cache
 import urllib.parse
 import os
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     # 服务配置
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = 8010
 
     class Config:
         env_file = ".env"

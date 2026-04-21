@@ -168,14 +168,14 @@ EOF
             info "已创建 .env 文件"
         fi
     else
-        # 更新已存在的 .env 文件中的端口配置
-        if grep -q "^PORT=" .env; then
-            sed -i "s/^PORT=.*/PORT=${SERVICE_PORT}/" .env
-            info "已更新 .env 文件中的端口配置"
-        else
-            echo "\n# 服务配置\nHOST=0.0.0.0\nPORT=${SERVICE_PORT}" >> .env
-            info "已添加端口配置到 .env 文件"
-        fi
+        # 移除所有现有的服务配置部分，避免重复
+        sed -i '/^# 服务配置/,/^$/d' .env
+        sed -i '/^PORT=/d' .env
+        sed -i '/^HOST=/d' .env
+        
+        # 添加新的服务配置
+        echo "\n# 服务配置\nHOST=0.0.0.0\nPORT=${SERVICE_PORT}" >> .env
+        info "已更新 .env 文件中的服务配置"
     fi
 }
 
@@ -193,7 +193,7 @@ Wants=mysql.service
 User=${SERVICE_USER}
 Group=${SERVICE_USER}
 WorkingDirectory=${PROJECT_DIR}
-ExecStart=${PROJECT_DIR}/venv/bin/python ${PROJECT_DIR}/run.py
+ExecStart=${PROJECT_DIR}/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port ${SERVICE_PORT}
 Restart=always
 RestartSec=5
 StandardOutput=journal
