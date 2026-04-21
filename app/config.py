@@ -1,4 +1,8 @@
-from pydantic import BaseSettings
+# 尝试从pydantic-settings导入BaseSettings（Pydantic V2），如果失败则从pydantic导入（Pydantic V1）
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    from pydantic import BaseSettings
 from functools import lru_cache
 import urllib.parse
 import os

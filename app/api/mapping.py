@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
-from app.schemas import DeviceMappingCreate, DeviceMappingUpdate, DeviceMappingResponse, APIResponse
+from app.schemas import DeviceMappingCreate, DeviceMappingUpdate, DeviceMappingResponse, APIResponse, PYDANTIC_V2
 from app import crud
 import logging
 
@@ -19,10 +19,16 @@ async def get_mappings(
 ):
     try:
         mappings = crud.get_device_mappings(db, device_id=device_id, convert_code=convert_code)
+        # 根据Pydantic版本使用不同的方法
+        if PYDANTIC_V2:
+            items = [DeviceMappingResponse.model_validate(m).model_dump() for m in mappings]
+        else:
+            items = [DeviceMappingResponse.from_orm(m).dict() for m in mappings]
+        
         return APIResponse(
             code=200,
             message="success",
-            data={"items": [DeviceMappingResponse.from_orm(m).dict() for m in mappings]}
+            data={"items": items}
         )
     except Exception as e:
         logger.error(f"获取设备映射失败: {str(e)}")
@@ -58,10 +64,16 @@ async def create_mapping(
         mapping = crud.create_device_mapping(db, mapping_data)
         logger.info(f"设备映射创建成功: {mapping.id}")
 
+        # 根据Pydantic版本使用不同的方法
+        if PYDANTIC_V2:
+            mapping_data = DeviceMappingResponse.model_validate(mapping).model_dump()
+        else:
+            mapping_data = DeviceMappingResponse.from_orm(mapping).dict()
+        
         return APIResponse(
             code=200,
             message="success",
-            data=DeviceMappingResponse.from_orm(mapping).dict()
+            data=mapping_data
         )
     except Exception as e:
         logger.error(f"创建设备映射失败: {str(e)}")
@@ -92,10 +104,16 @@ async def update_mapping(
 
         mapping = crud.update_device_mapping(db, mapping_id, mapping_data)
 
+        # 根据Pydantic版本使用不同的方法
+        if PYDANTIC_V2:
+            mapping_data = DeviceMappingResponse.model_validate(mapping).model_dump() if mapping else None
+        else:
+            mapping_data = DeviceMappingResponse.from_orm(mapping).dict() if mapping else None
+        
         return APIResponse(
             code=200,
             message="success",
-            data=DeviceMappingResponse.from_orm(mapping).dict() if mapping else None
+            data=mapping_data
         )
     except Exception as e:
         logger.error(f"更新设备映射失败: {str(e)}")

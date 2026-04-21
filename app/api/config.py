@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from app.database import get_db, get_db_status, update_db_config
 from app.tcp_client import get_tcp_status, check_tcp_connection, reconnect_tcp, send_custom_message, close_tcp_connection
-from app.schemas import TCPConfigUpdate, TCPConfigResponse, DatabaseConfigUpdate, DatabaseConfigResponse, APIResponse
+from app.schemas import TCPConfigUpdate, TCPConfigResponse, DatabaseConfigUpdate, DatabaseConfigResponse, APIResponse, PYDANTIC_V2
 from pydantic import BaseModel
 from app import crud
 import logging
@@ -163,11 +163,17 @@ async def update_database_config(
         )
         
         if success:
-            logger.info(f"数据库配置更新成功: {config_data.dict(exclude_none=True)}")
+            # 根据Pydantic版本使用不同的方法
+            if PYDANTIC_V2:
+                config_dict = config_data.model_dump(exclude_none=True)
+            else:
+                config_dict = config_data.dict(exclude_none=True)
+            
+            logger.info(f"数据库配置更新成功: {config_dict}")
             return APIResponse(
                 code=200,
                 message="success",
-                data=config_data.dict(exclude_none=True)
+                data=config_dict
             )
         else:
             return APIResponse(

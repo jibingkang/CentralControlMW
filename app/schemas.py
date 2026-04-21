@@ -2,6 +2,15 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from datetime import datetime
 
+# 检测Pydantic版本
+try:
+    # Pydantic V2
+    from pydantic import model_validator
+    PYDANTIC_V2 = True
+except ImportError:
+    # Pydantic V1
+    PYDANTIC_V2 = False
+
 
 class ButtonCallbackRequest(BaseModel):
     cmdToken: Optional[str] = ""
@@ -36,7 +45,10 @@ class DeviceMappingResponse(DeviceMappingBase):
     updated_at: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        if PYDANTIC_V2:
+            from_attributes = True
+        else:
+            orm_mode = True
 
 
 class TCPConfigBase(BaseModel):
@@ -86,7 +98,10 @@ class OperationLogResponse(BaseModel):
     created_at: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        if PYDANTIC_V2:
+            from_attributes = True
+        else:
+            orm_mode = True
 
 
 class LogQueryParams(BaseModel):
