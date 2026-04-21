@@ -163,11 +163,11 @@ async def update_database_config(
         )
         
         if success:
-            logger.info(f"数据库配置更新成功: {config_data.model_dump(exclude_none=True)}")
+            logger.info(f"数据库配置更新成功: {config_data.dict(exclude_none=True)}")
             return APIResponse(
                 code=200,
                 message="success",
-                data=config_data.model_dump(exclude_none=True)
+                data=config_data.dict(exclude_none=True)
             )
         else:
             return APIResponse(

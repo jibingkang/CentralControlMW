@@ -22,7 +22,7 @@ async def get_mappings(
         return APIResponse(
             code=200,
             message="success",
-            data={"items": [DeviceMappingResponse.model_validate(m).model_dump() for m in mappings]}
+            data={"items": [DeviceMappingResponse.from_orm(m).dict() for m in mappings]}
         )
     except Exception as e:
         logger.error(f"获取设备映射失败: {str(e)}")
@@ -61,7 +61,7 @@ async def create_mapping(
         return APIResponse(
             code=200,
             message="success",
-            data=DeviceMappingResponse.model_validate(mapping).model_dump()
+            data=DeviceMappingResponse.from_orm(mapping).dict()
         )
     except Exception as e:
         logger.error(f"创建设备映射失败: {str(e)}")
@@ -95,7 +95,7 @@ async def update_mapping(
         return APIResponse(
             code=200,
             message="success",
-            data=DeviceMappingResponse.model_validate(mapping).model_dump() if mapping else None
+            data=DeviceMappingResponse.from_orm(mapping).dict() if mapping else None
         )
     except Exception as e:
         logger.error(f"更新设备映射失败: {str(e)}")
