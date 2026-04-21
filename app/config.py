@@ -1,6 +1,7 @@
-from pydantic_settings import BaseSettings
+from pydantic import BaseSettings
 from functools import lru_cache
 import urllib.parse
+import os
 
 
 class Settings(BaseSettings):

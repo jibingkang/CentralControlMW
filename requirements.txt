@@ -4,3 +4,4 @@ sqlalchemy==1.4.27
 pymysql==1.0.2
 pydantic==1.8.2
 python-dotenv==0.17.1
+aiofiles==0.8.0

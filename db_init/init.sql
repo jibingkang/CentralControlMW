@@ -40,9 +40,8 @@ CREATE TABLE IF NOT EXISTS operation_log (
     status VARCHAR(20) NOT NULL COMMENT '状态: success-成功, failed-失败',
     error_message TEXT COMMENT '错误信息',
     client_ip VARCHAR(50) DEFAULT '' COMMENT '客户端IP',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_operation_log_type (log_type),
+    INDEX idx_operation_log_device_id (device_id),
+    INDEX idx_operation_log_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
-
-CREATE INDEX idx_operation_log_type ON operation_log(log_type);
-CREATE INDEX idx_operation_log_device_id ON operation_log(device_id);
-CREATE INDEX idx_operation_log_created_at ON operation_log(created_at);
