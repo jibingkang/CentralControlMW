@@ -604,7 +604,8 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8000/api/v1';
+        // 动态获取API基础URL，使用当前页面的主机和端口
+        const API_BASE = `${window.location.protocol}//${window.location.host}/api/v1`;
         let currentPage = 1;
         const pageSize = 20;
 
@@ -670,8 +671,14 @@
         // 加载系统状态
         async function loadSystemStatus() {
             try {
+                console.log('开始加载系统状态...');
+                console.log('API_BASE:', API_BASE);
+                
                 const response = await fetch(`${API_BASE}/config/status`);
+                console.log('系统状态请求状态:', response.status);
+                
                 const data = await response.json();
+                console.log('系统状态响应:', data);
                 
                 if (data.code === 200 && data.data) {
                     // 数据库状态
@@ -689,7 +696,7 @@
                         dbIndicator.className = 'status-indicator status-offline';
                         dbContent.innerHTML = `
                             <p>状态: 未连接</p>
-                            <p>错误: ${dbStatus.error}</p>
+                            <p>错误: ${dbStatus.error || '未知错误'}</p>
                             <p>最后检查: ${new Date(dbStatus.last_checked * 1000).toLocaleString()}</p>
                         `;
                     }
@@ -709,13 +716,21 @@
                         tcpIndicator.className = 'status-indicator status-offline';
                         tcpContent.innerHTML = `
                             <p>状态: 未连接</p>
-                            <p>错误: ${tcpStatus.error}</p>
+                            <p>错误: ${tcpStatus.error || '未知错误'}</p>
                             <p>最后检查: ${new Date(tcpStatus.last_checked * 1000).toLocaleString()}</p>
                         `;
                     }
+                } else {
+                    console.error('系统状态响应格式错误:', data);
+                    // 显示错误信息
+                    document.getElementById('dbStatusContent').innerHTML = '<p>加载失败: 响应格式错误</p>';
+                    document.getElementById('tcpStatusContent').innerHTML = '<p>加载失败: 响应格式错误</p>';
                 }
             } catch (error) {
                 console.error('加载系统状态失败:', error);
+                // 显示错误信息
+                document.getElementById('dbStatusContent').innerHTML = `<p>加载失败: ${error.message}</p>`;
+                document.getElementById('tcpStatusContent').innerHTML = `<p>加载失败: ${error.message}</p>`;
             }
         }
 

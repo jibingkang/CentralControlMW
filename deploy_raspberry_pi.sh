@@ -30,12 +30,18 @@ SERVICE_USER="pi"
 SERVICE_PORT="8000"
 
 # 解析命令行参数
-while getopts "p:" opt; do
-    case $opt in
-        p) SERVICE_PORT="$OPTARG" ;;
-        *) echo "用法: $0 [-p 端口号]" ; exit 1 ;;
-    esac
-done
+if [ $# -eq 1 ]; then
+    # 直接传入端口号
+    SERVICE_PORT="$1"
+elif [ $# -eq 2 ]; then
+    # 使用 -p 选项传入端口号
+    if [ "$1" = "-p" ]; then
+        SERVICE_PORT="$2"
+    else
+        echo "用法: $0 [端口号] 或 $0 [-p 端口号]"
+        exit 1
+    fi
+fi
 
 # 显示端口信息
 echo -e "${YELLOW}[INFO]${NC} 服务端口: ${SERVICE_PORT}"
@@ -162,7 +168,14 @@ EOF
             info "已创建 .env 文件"
         fi
     else
-        info ".env 文件已存在，跳过创建"
+        # 更新已存在的 .env 文件中的端口配置
+        if grep -q "^PORT=" .env; then
+            sed -i "s/^PORT=.*/PORT=${SERVICE_PORT}/" .env
+            info "已更新 .env 文件中的端口配置"
+        else
+            echo "\n# 服务配置\nHOST=0.0.0.0\nPORT=${SERVICE_PORT}" >> .env
+            info "已添加端口配置到 .env 文件"
+        fi
     fi
 }
 
@@ -182,9 +195,12 @@ Group=${SERVICE_USER}
 WorkingDirectory=${PROJECT_DIR}
 ExecStart=${PROJECT_DIR}/venv/bin/python ${PROJECT_DIR}/run.py
 Restart=always
-RestartSec=3
+RestartSec=5
 StandardOutput=journal
 StandardError=journal
+# 避免服务无限重启
+StartLimitIntervalSec=60
+StartLimitBurst=3
 
 [Install]
 WantedBy=multi-user.target
@@ -193,9 +209,22 @@ EOF
     info "systemd服务文件创建完成"
 }
 
+# 检查端口是否被占用
+check_port() {
+    if lsof -i :${SERVICE_PORT} > /dev/null 2>&1; then
+        warn "端口 ${SERVICE_PORT} 已被占用，尝试停止占用该端口的进程..."
+        lsof -ti :${SERVICE_PORT} | xargs -r kill -9
+        sleep 2
+    fi
+    info "端口 ${SERVICE_PORT} 检查完成"
+}
+
 # 启动服务
 start_service() {
     info "启动服务..."
+
+    # 检查端口占用
+    check_port
 
     # 重新加载systemd配置
     systemctl daemon-reload

@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     TCP_SERVER_PORT: int = 8080
     TCP_TIMEOUT: int = 5
 
+    # 服务配置
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+
     class Config:
         env_file = ".env"
         case_sensitive = True
