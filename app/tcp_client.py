@@ -23,6 +23,16 @@ tcp_connection_status = {
 # 全局TCP连接对象（可选，用于长连接）
 _tcp_socket = None
 
+def hex_string_to_bytes(hex_string: str) -> bytes:
+    """将16进制字符串转换为字节数据"""
+    # 移除空格，将字符串转换为纯16进制
+    hex_string = hex_string.replace(' ', '')
+    # 验证输入是否为有效的16进制
+    if len(hex_string) % 2 != 0:
+        raise ValueError("无效的16进制字符串长度")
+    # 转换为字节
+    return bytes.fromhex(hex_string)
+
 def send_tcp_message(host: str, port: int, message: str) -> bool:
     """发送TCP消息"""
     global tcp_connection_status
@@ -31,13 +41,29 @@ def send_tcp_message(host: str, port: int, message: str) -> bool:
         logger.info(f"开始发送TCP消息到 {host}:{port}")
         logger.info(f"发送消息: {message}")
         
+        # 尝试将消息转换为16进制字节
+        try:
+            # 检查是否为16进制格式（包含空格的16进制字符串）
+            if all(c in '0123456789ABCDEFabcdef ' for c in message):
+                # 转换为16进制字节
+                message_bytes = hex_string_to_bytes(message)
+                logger.info(f"转换为16进制字节: {message_bytes.hex()}")
+            else:
+                # 否则按UTF-8编码
+                message_bytes = message.encode('utf-8')
+                logger.info(f"按UTF-8编码: {message_bytes.hex()}")
+        except Exception as e:
+            # 转换失败，按UTF-8编码
+            message_bytes = message.encode('utf-8')
+            logger.warning(f"16进制转换失败，按UTF-8编码: {str(e)}")
+        
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(settings.TCP_TIMEOUT)
             s.connect((host, port))
-            s.sendall(message.encode('utf-8'))
+            s.sendall(message_bytes)
             # 接收响应（可选）
             # response = s.recv(1024)
-            # logger.info(f"收到响应: {response.decode('utf-8')}")
+            # logger.info(f"收到响应: {response.hex()}")
         
         tcp_connection_status["connected"] = True
         tcp_connection_status["error"] = None
